@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Xtream | Cyber Access</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --bg: #02040a; --accent: #00a8ff; --ai-glow: #00ffcc; --glass: rgba(15, 23, 42, 0.6); --border: rgba(0, 168, 255, 0.2); }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; background: radial-gradient(circle at 50% 50%, #0a192f 0%, #02040a 100%); }
+        .login-container { width: 90%; max-width: 380px; padding: 45px 35px; background: var(--glass); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid var(--border); text-align: center; box-shadow: 0 0 40px rgba(0, 168, 255, 0.1); position: relative; z-index: 10; }
+        .logo { font-size: 34px; font-weight: 900; color: #fff; letter-spacing: -1px; margin-bottom: 5px; background: linear-gradient(to right, #fff, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(0,168,255,0.5)); }
+        input { width: 100%; padding: 16px 20px; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; color: white; font-size: 15px; outline: none; box-sizing: border-box; transition: 0.4s; margin-bottom: 12px; }
+        input:focus { border-color: var(--accent); box-shadow: 0 0 20px rgba(0, 168, 255, 0.2); background: rgba(0, 0, 0, 0.8); }
+        .btn-main { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--accent), #0066ff); color: white; border: none; border-radius: 15px; font-weight: 700; font-size: 16px; margin-top: 10px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 15px rgba(0, 168, 255, 0.3); }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 12px 20px rgba(0, 168, 255, 0.4); }
+        #ai-container { position: fixed; bottom: 40px; right: 40px; z-index: 10001; display: flex; flex-direction: column; align-items: flex-end; }
+        #ai-bubble { background: rgba(255, 255, 255, 0.95); color: #000; padding: 14px 20px; border-radius: 20px 20px 0 20px; max-width: 240px; margin-bottom: 15px; font-size: 14px; font-weight: 500; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative; }
+        #ai-avatar-wrap { position: relative; width: 65px; height: 65px; }
+        .ai-ring { position: absolute; inset: 0; border: 2px solid var(--ai-glow); border-radius: 50%; border-top-color: transparent; animation: rotate 2s linear infinite; }
+        #ai-avatar { position: absolute; inset: 5px; background: #0f172a; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--ai-glow); box-shadow: inset 0 0 10px var(--ai-glow); }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        #auth-form-wrapper { display: none; opacity: 0; transition: 0.8s ease; }
+    </style>
+</head>
+<body>
+    <div id="ai-container">
+        <div id="ai-bubble"></div>
+        <div id="ai-avatar-wrap">
+            <div class="ai-ring"></div>
+            <div id="ai-avatar"><i class="fas fa-robot"></i></div>
+        </div>
+    </div>
+
+    <div class="login-container">
+        <div class="logo">Movie Xtream</div>
+        <div id="form-sub" style="font-size: 13px; color: #64748b; margin-bottom: 30px; text-transform: uppercase; letter-spacing: 2px;">Syncing Neural Link...</div>
+        
+        <div id="auth-form-wrapper">
+            <input type="text" id="username" placeholder="Username" style="display: none;">
+            <input type="email" id="email" placeholder="Email Address">
+            <input type="password" id="password" placeholder="Password">
+            
+            <button class="btn-main" id="submit-btn" onclick="handleEmailAuth()">INITIALIZE</button>
+            
+            <div style="margin-top: 20px; font-size: 13px; color: #94a3b8;">
+                <span id="toggle-text" onclick="toggleMode()" style="cursor:pointer; color: var(--accent);">Create Account</span> • 
+                <span onclick="handleForgotPassword()" style="cursor:pointer;">Reset</span>
+            </div>
+        </div>
+                </div>
+                 <script>
+    const firebaseConfig = { 
+        apiKey: "AIzaSyBW6mwoDVbGn0cX7ySV49648jSrLZ_vyEQ", 
+        authDomain: "leoxtream-46cdf.firebaseapp.com", 
+        projectId: "leoxtream-46cdf", 
+        appId: "1:198227069591:web:a86310e5dc58b845abf7d2" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let isLoginMode = true;
+
+    const aiBubble = document.getElementById('ai-bubble');
+
+    function leoTalk(text) {
+        aiBubble.style.display = 'block';
+        aiBubble.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Thinking...`;
+        setTimeout(() => { aiBubble.innerText = text; }, 1200);
+    }
+
+    window.onload = () => {
+        setTimeout(() => leoTalk("Connection established. Welcome to Xtream, I am Leo."), 1000);
+        setTimeout(() => {
+            document.getElementById('form-sub').innerText = "Security Override Active";
+            const form = document.getElementById('auth-form-wrapper');
+            form.style.display = "block";
+            setTimeout(() => form.style.opacity = "1", 50);
+        }, 3500);
+    };
+
+    function toggleMode() {
+        isLoginMode = !isLoginMode;
+        leoTalk(isLoginMode ? "Switching to secure login. Welcome back!" : "Accessing registration... Pick a unique identity.");
+        document.getElementById('submit-btn').innerText = isLoginMode ? "INITIALIZE" : "CREATE IDENTITY";
+        document.getElementById('username').style.display = isLoginMode ? "none" : "block";
+    }
+                        async function handleEmailAuth() {
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        const userField = document.getElementById('username').value;
+        
+        if(!email || !pass) {
+            leoTalk("I can't verify an empty request. Please provide details.");
+            return;
+        }
+
+        leoTalk("Querying neural database... checking clearance.");
+
+        try {
+            // Lock session to this phone
+            await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+            if(isLoginMode) {
+                await auth.signInWithEmailAndPassword(email, pass);
+                leoTalk("Access Granted. Enjoy the stream, Master.");
+                setTimeout(() => window.location.href = "index.html", 1500);
+            } else {
+                if (!userField) { leoTalk("A username is required for registration."); return; }
+                
+                // Check if username exists in Firestore
+                const userDoc = await db.collection("usernames").doc(userField).get();
+                if (userDoc.exists) {
+                    leoTalk("Identity collision! That username already exists.");
+                    return;
+                }
+
+                // Create account
+                const userCred = await auth.createUserWithEmailAndPassword(email, pass);
+                
+                // CRITICAL: Save username to Firebase Profile so it doesn't just say "User"
+                await userCred.user.updateProfile({ displayName: userField });
+                
+                // Save link in Firestore
+                await db.collection("usernames").doc(userField).set({ uid: userCred.user.uid });
+
+                leoTalk("Identity created. Welcome to the collective, " + userField);
+                setTimeout(() => window.location.href = "index.html", 2000);
+            }
+        } catch(e) { 
+            leoTalk("Unauthorized. Error: " + e.message);
+        }
+    }
+
+    function handleForgotPassword() {
+        const email = document.getElementById('email').value;
+        if(!email) { leoTalk("Input your email above so I can transmit a reset link."); return; }
+        auth.sendPasswordResetEmail(email).then(() => {
+            leoTalk("Reset link transmitted. Check your inbox.");
+        }).catch(e => { leoTalk("Failed: " + e.message); });
+    }
+</script>
+</body>
+</html>
